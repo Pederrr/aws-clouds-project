@@ -1,0 +1,117 @@
+import React, { useEffect, useState } from 'react'
+import { useParams } from "react-router-dom";
+import OpenLibraryService from '../services/openlibrary.service';
+import OpenLibraryButton from '../components/OpenLibraryButton';
+import AddToReadingListButtton from '../components/AddToReadingListButton';
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
+import useToast from '../toast/useToast';
+import { Img } from 'react-image'
+import AnimatedLayout from '../AnimatedLayout';
+import { useThemeMode } from 'flowbite-react';
+import EditionSelector from '../components/EditionSelector';
+import { useTranslation, Trans } from 'react-i18next';
+import BooksService from '../services/books.service';
+
+function BookDetails() {
+    let { id } = useParams();
+    const [data, setData] = useState();
+    const [description, setDescription] = useState();
+    const [author, setAuthor] = useState();
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [workID, setWorkID] = useState();
+    const theme = useThemeMode();
+    const toast = useToast(4000);
+    const { t } = useTranslation();
+
+    useEffect(() => {
+        BooksService.get_isbn(id).then(
+            response => {
+                setData(response.data)
+                if (response.data.description)
+                    setDescription(response.data.description)
+                else
+                    setDescription(t("book.no_description_found"))
+                if(response.data.author)
+                    setAuthor(response.data.author)
+                else
+                    setAuthor(t("book.unknown_author"))
+                setLoading(false)
+            },
+            error => {
+                const resMessage =
+                    (error.response &&
+                        error.response.data &&
+                        error.response.data.message) ||
+                    error.message ||
+                    error.toString();
+                toast("error", resMessage);
+            }
+        )
+    }, [])
+
+    useEffect(() => {
+        OpenLibraryService.get(id).then(
+            response => {
+                setWorkID(response.data.works[0].key)
+            },
+            error => {
+                const resMessage =
+                    (error.response &&
+                        error.response.data &&
+                        error.response.data.message) ||
+                    error.message ||
+                    error.toString();
+                if (error.status != 404) {
+                    toast("error", "OpenLibrary: " + resMessage)
+                }
+            }
+        )
+    }, [])
+    
+
+    return (
+        <AnimatedLayout>
+        <div className="pt-10 lg:pt-20 pb-10">
+            <div className="grid grid-cols-1 grid-rows-1 lg:grid-cols-2 gap-4 justify-items-stretch	">
+                <div className="lg:row-span-2 mx-auto">
+                    <Img className="shadow-2xl object-fit rounded" src={"https://covers.openlibrary.org/b/isbn/" + id + "-L.jpg?default=false"} 
+                        loader={<Skeleton count={1} width={320} height={500} borderRadius={0} inline={true}/>}
+                        unloader={theme.mode == "dark" && <img src="/fallback-cover-light.svg"/> || theme.mode == "light" && <img src="/fallback-cover.svg"/>}
+                    />
+                    </div>
+                <div>
+                    <article className="format dark:format-invert">
+                        <h2>{data?.title || <Skeleton />}</h2>
+                        {author ? (
+                            <p className="lead">{t("book.by_author", { author: author })}</p>
+                        ) : (
+                            <Skeleton className="w-1/2" />
+                        )}
+                        <p>{description || <Skeleton count={4.5}/>}</p>
+                        <p>
+                            <span className="uppercase whitespace-nowrap font-medium text-gray-900 dark:text-white pr-10">{t("book.pages")}</span> 
+                            {loading ? (
+                                <Skeleton width={50} />
+                            ): (
+                                data?.total_pages || 0
+                            )}
+                        </p>
+                        <p><span className="uppercase whitespace-nowrap font-medium text-gray-900 dark:text-white pr-10">ISBN</span> {id}</p>
+                    </article>
+                </div>
+                <div className="lg:col-start-2 lg:row-start-2">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <AddToReadingListButtton isbn={id} data={data} description={description} author={author}/>
+                        <OpenLibraryButton isbn={id} />
+                        <EditionSelector work_id={workID} selected_isbn={id}/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </AnimatedLayout>
+    )
+}
+
+export default BookDetails

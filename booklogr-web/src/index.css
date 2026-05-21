@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+@import 'flowbite-react/plugin/tailwindcss';
+@source '../.flowbite-react/class-list.json';
+@plugin "flowbite-typography";
+
+/*@config '../tailwind.config.js';*/
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+html, body  {
+    font-family: "Libre Baskerville", system-ui, sans-serif;
+    font-weight: 400;
+    @apply bg-[#FDFCF7]
+}
+
+.dark html, .dark body {
+    @apply bg-[#121212]
+}
+
+}
