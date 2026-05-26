@@ -1,8 +1,7 @@
-AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Deploys the backend infrastructure for Booklogr, including an
-  Auto Scaling group of EC2 instances running the Booklogr application and
-  an Application Load Balancer to distribute traffic.
+  Deploys an Application Load Balancer with listener and rules to correctly
+  route traffic to the backend for booklogr.
+
 Resources:
   LBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -51,69 +50,6 @@ Resources:
         Value: ""
       - Key: "load_balancing.algorithm.anomaly_mitigation"
         Value: "off"
-
-  BooklogrLaunchTemplate:
-    Type: AWS::EC2::LaunchTemplate
-    Properties:
-      LaunchTemplateData: 
-        UserData: 
-           Fn::Base64: 
-            !Sub
-              - |
-               #!/bin/bash
-               yum install docker -y
-               systemctl enable docker --now
-               
-               docker run -d -p 80:5000 \
-                 --name booklogr \
-                 --env AUTH_SECRET_KEY=supersecretkey \
-                 --env AUTH_ALLOW_REGISTRATION=True \
-                 --env AUTH_REQUIRE_VERIFICATION=False \
-                 --env SINGLE_USER_MODE=False \
-                 --env DATABASE_URL=postgresql://postgres:password@${DbUrl}/booklogr?sslmode=require \
-                  mozzo/booklogr:v1.10.0
-              - DbUrl: !ImportValue Booklogr-DBEndpoint
-        SecurityGroupIds: 
-        - !ImportValue Booklogr-ServerSG
-        ImageId: "ami-0236922087fa98b6e"
-        InstanceType: t3.micro
-        MetadataOptions: 
-          HttpEndpoint: enabled
-          HttpPutResponseHopLimit: 2
-          HttpTokens: required
-
-  AutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      AutoScalingGroupName: booklogr
-      LaunchTemplate: 
-        LaunchTemplateId: !Ref BooklogrLaunchTemplate
-        Version: !GetAtt BooklogrLaunchTemplate.LatestVersionNumber
-      MinSize: 2
-      MaxSize: 4
-      DesiredCapacity: 2
-      Cooldown: 300
-      TargetGroupARNs: 
-      - !Ref LBTargetGroup
-      HealthCheckType: "EC2"
-      HealthCheckGracePeriod: 300
-      VPCZoneIdentifier: 
-      - !ImportValue Booklogr-PublicSubnet1
-      - !ImportValue Booklogr-PublicSubnet2
-      TerminationPolicies: 
-      - "Default"
-      NewInstancesProtectedFromScaleIn: false
-
-  AutoScalingScalingPolicy:
-    Type: "AWS::AutoScaling::ScalingPolicy"
-    Properties:
-      AutoScalingGroupName: !Ref AutoScalingGroup
-      PolicyType: "TargetTrackingScaling"
-      TargetTrackingConfiguration: 
-        PredefinedMetricSpecification: 
-          PredefinedMetricType: "ASGAverageCPUUtilization"
-        TargetValue: 70
-        DisableScaleIn: false
 
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -200,5 +136,11 @@ Resources:
 
 Outputs:
   LoadBalancerDNSName:
-    Description: "DNS name of the load balancer"
+    Description: DNS name of the load balancer
     Value: !GetAtt LoadBalancer.DNSName
+
+  LBTargetGroup:
+    Description: Target group ARN of the load balancer, needed for Auto Scaling group configuration
+    Value: !Ref LBTargetGroup
+    Export:
+      Name: Booklogr-LBTargetGroup

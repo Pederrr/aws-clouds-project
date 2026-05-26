@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Deploys the backend infrastructure for Booklogr, including an
+  Auto Scaling group of EC2 instances running the Booklogr application and
+  an Application Load Balancer to distribute traffic.
+
+Parameters:
+  AMIid:
+    Type: String
+    Description: "ID of the custom AMI with docker installed and booklogr image pre-pulled"
+
+  InstanceType:
+    Type: String
+    Description: "EC2 instance type for the Auto Scaling group"
+    AllowedValues: 
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Default: t3.micro
+
+  MaxSize:
+    Type: Number
+    Description: Maximum number of instances in the Auto Scaling group
+    Default: 4
+    MinValue: 2
+    MaxValue: 10
+
+Resources:
+  BooklogrLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData: 
+        UserData: 
+           Fn::Base64: 
+            !Sub
+              - |
+               #!/bin/bash
+               docker run -d -p 80:5000 \
+                 --name booklogr \
+                 --env AUTH_SECRET_KEY=supersecretkey \
+                 --env AUTH_ALLOW_REGISTRATION=True \
+                 --env AUTH_REQUIRE_VERIFICATION=False \
+                 --env SINGLE_USER_MODE=False \
+                 --env DATABASE_URL=postgresql://postgres:password@${DbUrl}/booklogr?sslmode=require \
+                  mozzo/booklogr:v1.10.0
+              - DbUrl: !ImportValue Booklogr-DBEndpoint
+        SecurityGroupIds: 
+        - !ImportValue Booklogr-ServerSG
+        ImageId: !Ref AMIid
+        InstanceType: !Ref InstanceType
+        MetadataOptions: 
+          HttpEndpoint: enabled
+          HttpPutResponseHopLimit: 2
+          HttpTokens: required
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: booklogr
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref BooklogrLaunchTemplate
+        Version: !GetAtt BooklogrLaunchTemplate.LatestVersionNumber
+      MinSize: 2
+      MaxSize: !Ref MaxSize
+      DesiredCapacity: 2
+      Cooldown: 300
+      TargetGroupARNs: 
+      - !ImportValue Booklogr-LBTargetGroup
+      HealthCheckType: "EC2"
+      HealthCheckGracePeriod: 300
+      VPCZoneIdentifier: 
+      - !ImportValue Booklogr-PublicSubnet1
+      - !ImportValue Booklogr-PublicSubnet2
+      TerminationPolicies: 
+      - "Default"
+      NewInstancesProtectedFromScaleIn: false
+
+  AutoScalingScalingPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: "TargetTrackingScaling"
+      TargetTrackingConfiguration: 
+        PredefinedMetricSpecification: 
+          PredefinedMetricType: "ASGAverageCPUUtilization"
+        TargetValue: 70
+        DisableScaleIn: false
