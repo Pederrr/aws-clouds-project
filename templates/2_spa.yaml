@@ -1,0 +1,45 @@
+Description: CloudFormation template for the S3 bucket to host the SPA
+
+Resources:
+  SpaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault: 
+            SSEAlgorithm: "AES256"
+          BucketKeyEnabled: true
+      WebsiteConfiguration: 
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      OwnershipControls: 
+        Rules: 
+        - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      Tags:
+        - Key: Name
+          Value: booklogr-spa-bucket
+
+  SpaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SpaBucket
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+        - Sid: PublicReadGetObject
+          Effect: Allow
+          Principal: "*"
+          Action: s3:GetObject
+          Resource: !Sub "arn:aws:s3:::${SpaBucket}/*"
+
+Outputs:
+  DomainName:
+    Description: "The domain name of the S3 bucket hosting the SPA"
+    Value: !GetAtt SpaBucket.WebsiteURL
+    Export:
+      Name: Booklogr-DomainName

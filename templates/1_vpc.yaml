@@ -1,0 +1,267 @@
+Description: >
+  Creates VPS for our backend services, with 2 public and 2 private subnets
+  Also creates Security Groups for services that will be running in this VPC:
+    - LoadBalancerSecurityGroup: Allows HTTP access from CloudFront
+    - ServerSecurityGroup: Allow HTTP access from load balancer and SSH access
+    - DBSecurityGroup: Allow DB access from ServerSecurityGroup
+
+Parameters:
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/20
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.0.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.1.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.8.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.9.0/24
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: "Name"
+        Value: booklogr-vpc
+
+  # Internet gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: booklogr-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: booklogr-public-subnet-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: booklogr-public-subnet-2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: booklogr-private-subnet-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: booklogr-private-subnet-2
+
+  # Routing tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: booklogr-public-routes
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: booklogr-private-routes-1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: booklogr-private-routes-2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+  
+  # Security groups
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BooklogrLB
+      GroupDescription: Allows access to load balancer
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+
+  ServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BooklogrAPI
+      GroupDescription: Allow HTTP access from load balancer and SSH access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+        ToPort: 80
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+      SecurityGroupEgress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: BooklogrDB
+      GroupDescription: Allow DB access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        SourceSecurityGroupId: !Ref ServerSecurityGroup
+        ToPort: 5432
+        FromPort: 5432
+      SecurityGroupEgress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+    Export:
+      Name: Booklogr-VPC
+
+  ExportedPublicSubnet1:
+    Description: The first public subnet, exported for use in other stacks
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: Booklogr-PublicSubnet1
+
+  ExportedPublicSubnet2:
+    Description: The second public subnet, exported for use in other stacks
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: Booklogr-PublicSubnet2
+
+  ExportedPrivateSubnet1:
+    Description: The first private subnet, exported for use in other stacks
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: Booklogr-PrivateSubnet1
+
+  ExportedPrivateSubnet2:
+    Description: The second private subnet, exported for use in other stacks
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: Booklogr-PrivateSubnet2
+
+  DatabaseSG:
+    Description: The security group for the RDS instance, exported for use in the database stack
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: Booklogr-DatabaseSG
+
+  LoadBalancerSG:
+    Description: The security group for the load balancer, exported for use in the load balancer stack
+    Value: !Ref LoadBalancerSecurityGroup
+    Export:
+      Name: Booklogr-LoadBalancerSG
+
+  ServerSG:
+    Description: The security group for the server, exported for use in the server stack
+    Value: !Ref ServerSecurityGroup
+    Export:
+      Name: Booklogr-ServerSG
