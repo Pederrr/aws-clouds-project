@@ -203,7 +203,7 @@ class BookLogrUser(HttpUser):
             self.fetch_books()
         if not self.book_cache:
             return None
-        return random.choice(list(self.book_ids.keys()))
+        return random.choice(list(self.book_cache.keys()))
 
     def select_note_id(self):
         if not self.note_ids:
