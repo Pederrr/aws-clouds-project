@@ -53,7 +53,6 @@ Resources:
       DBParameterGroupName: "default.postgres18"
       OptionGroupName: "default:postgres-18"
       CACertificateIdentifier: "rds-ca-rsa2048-g1"
-      SkipFinalSnapshot: true
       DeleteAutomatedBackups: true
     
 Outputs:
