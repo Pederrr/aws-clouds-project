@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from locust import HttpUser, between, task
 
 
-SEED_USERS_PATH = os.path.join(os.path.dirname(__file__), "seed_users.csv")
+SEED_USERS_PATH = os.path.join(os.path.dirname(__file__), "existing_users.csv")
 
 READING_STATUSES = [
     "To be read",

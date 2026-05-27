@@ -293,7 +293,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--notes-per-book", type=int, default=2, help="Notes per book.")
     parser.add_argument(
-        "--output", type=str, default="seed_users.csv", help="Output CSV path."
+        "--output", type=str, default="existing_users.csv", help="Output CSV path."
     )
     parser.add_argument(
         "--seed", type=int, default=int(os.getenv("SEED", "1337")), help="Random seed."
