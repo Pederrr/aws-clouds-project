@@ -1,6 +1,16 @@
 Description: >
   RDS instance for the database
 
+Parameters:
+  InstanceType:
+    Type: String
+    Default: db.t3.micro
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+    Description: "The instance type for the RDS instance"
+
 Resources:
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -15,7 +25,7 @@ Resources:
     Properties:
       DBInstanceIdentifier: booklogr-db
       AllocatedStorage: 20
-      DBInstanceClass: db.t3.micro
+      DBInstanceClass: !Ref InstanceType
       Engine: postgres
       MasterUsername: postgres
       MasterUserPassword: password
