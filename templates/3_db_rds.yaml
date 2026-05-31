@@ -4,7 +4,7 @@ Description: >
 Parameters:
   InstanceType:
     Type: String
-    Default: db.t3.micro
+    Default: db.t3.medium
     AllowedValues:
       - db.t3.micro
       - db.t3.small
