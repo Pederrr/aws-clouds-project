@@ -1,2 +1,4 @@
 locust
 requests
+matplotlib
+tabulate
