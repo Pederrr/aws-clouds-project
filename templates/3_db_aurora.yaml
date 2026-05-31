@@ -1,0 +1,47 @@
+Description: >
+  Aurora Serverless database for the Booklogr application
+  RDS instance for the database
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: db.t3.medium
+    AllowedValues:
+      - db.t3.medium
+      - db.t3.large
+    Description: "The instance type for the RDS instance"
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for the RDS instance
+      SubnetIds:
+      - !ImportValue Booklogr-PrivateSubnet1
+      - !ImportValue Booklogr-PrivateSubnet2
+
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-postgresql
+      MasterUsername: postgres
+      MasterUserPassword: password
+      DatabaseName: booklogr
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+      - !ImportValue Booklogr-DatabaseSG
+
+  AuroraDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraCluster
+      Engine: aurora-postgresql
+      DBInstanceClass: !Ref InstanceType
+      PubliclyAccessible: false
+
+Outputs:
+  DBEndpoint:
+    Description: "Endpoint of the DB"
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+    Export:
+      Name: Booklogr-DBEndpoint
