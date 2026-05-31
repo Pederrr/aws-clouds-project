@@ -83,7 +83,7 @@ def generate_isbn13():
 
 
 class BookLogrUser(HttpUser):
-    wait_time = between(2, 8)
+    wait_time = between(1, 5)
 
     def on_start(self):
         self.user = random.choice(SEED_USERS)
@@ -214,7 +214,7 @@ class BookLogrUser(HttpUser):
     def list_books(self):
         self.fetch_books()
 
-    @task(3)
+    @task(1)
     def add_book(self):
         template = random.choice(BOOK_CATALOG)
         total_pages = random.randint(120, 900)
@@ -240,7 +240,7 @@ class BookLogrUser(HttpUser):
         if response is not None and response.status_code == 200:
             self.fetch_books()
 
-    @task(4)
+    @task(3)
     def update_book(self):
         book_id = self.select_book_id()
         if not book_id:
@@ -264,7 +264,7 @@ class BookLogrUser(HttpUser):
             json=payload,
         )
 
-    @task(3)
+    @task(2)
     def add_note(self):
         book_id = self.select_book_id()
         if not book_id:
@@ -294,7 +294,7 @@ class BookLogrUser(HttpUser):
                     if note_id and note_id not in self.note_ids:
                         self.note_ids.append(note_id)
 
-    @task(2)
+    @task(1)
     def update_note(self):
         note_id = self.select_note_id()
         if not note_id:
@@ -310,7 +310,7 @@ class BookLogrUser(HttpUser):
             json=payload,
         )
 
-    @task(2)
+    @task(6)
     def list_notes(self):
         book_id = self.select_book_id()
         if not book_id:
@@ -321,11 +321,11 @@ class BookLogrUser(HttpUser):
             name="notes: list",
         )
 
-    @task(2)
+    @task(4)
     def view_own_profile(self):
         self.request_with_refresh("GET", "/v1/profiles", name="profile: me")
 
-    @task(2)
+    @task(4)
     def view_public_profile(self):
         if not PUBLIC_PROFILE_NAMES:
             return
