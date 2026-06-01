@@ -51,3 +51,12 @@ $ locust
 - Enter the number of users
 - Enter host name: `http://<load_balancer_dns_name>`
 - Tweak any other settings and click "Start"
+
+# Results
+You can view the results of the load testing in the `results` directory. It contains the `results/data` subdirectory with the measurements captured during my load testing: CSV files and charts exported from locust for each run of the test.
+
+I have also created a python script `results/plot_results.py` that generates charts from the measured data.
+```
+$ python results/plot_results.py
+```
+The generated charts will be saved in the `results/plots` directory by default. They include charts comparing the response times, error rates, and requests per second of our system with RDS vs Aurora as the used database.
