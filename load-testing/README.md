@@ -1,5 +1,18 @@
+# Setup virtual environment and install dependencies
+
+- Create a Python virtual environment and activate it:
+```
+$ python3 -m venv venv
+$ source venv/bin/activate
+```
+- Install the required dependencies:
+```
+$ pip install -r requirements.txt
+```
+
 # Seeding the DB
 
+- The `dump_file.sqp` file contains the SQL dump for quicker seeding of the DB. It was generated using the `seed_api.py` script.
 - Create EC2 instance in the `booklogr-vpc`, with the `BooklogrAPI` security group, and the `vockey` key pair.
 - Copy the `dump_file.sql` file to the EC2 instance:
 ```
@@ -27,3 +40,14 @@ $ psql "host=$RDSHOST port=5432 dbname=booklogr user=postgres sslmode=verify-ful
 $ psql "host=$RDSHOST port=5432 dbname=booklogr user=postgres sslmode=verify-full sslrootcert=./global-bundle.pem" -f dump_file.sql
 ```
 
+# Running the Load Test
+
+- Make sure the followed the steps to create Python venv and install dependencies in the main README.
+- Run locust:
+```
+$ locust
+```
+- Open a browser and navigate to `http://localhost:8089`.
+- Enter the number of users
+- Enter host name: `http://<load_balancer_dns_name>`
+- Tweak any other settings and click "Start"
