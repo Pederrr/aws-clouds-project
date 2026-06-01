@@ -4,10 +4,11 @@ This directory contains CloudFormation templates for deploying the infrastructur
 
 ## Usage
 
-- The templates should be deployed in the order given by the number prefix in the filename (e.g. 1_x before 2_y).
+- The templates can be deployed by using the AWS Management Console
+- The templates are designed to be deployed in the order given by the number prefix in the filename (e.g. 1_x before 2_y).
 - Each template exports outputs that are used as parameters for the next template in the sequence.
-- Set the `LabRole` as IAM role
-- For `5_auto_scaling_group.yaml`, you first need to create a AMI with pre-installed docker, and pulled the required docker images. Then set the `ImageId` parameter to the AMI ID of the created AMI. TO create the AMI, you can create a temporary EC2 instance with the Amazon Linux 2023 AMI, and the following user data, and then create an image after the instance is running:
+- Set the `LabRole` as IAM role when creating the stack for each template
+- For `5_auto_scaling_group.yaml`, you first need to create a AMI with pre-installed docker, and pulled the required docker images (My lab environment already contains such AMI). Then set the `ImageId` parameter to the AMI ID of the created AMI. To create the AMI, you can create a temporary EC2 instance with the Amazon Linux 2023 AMI, and the following user data, and then create an image after the instance is running:
 ```
 #!/bin/bash
 yum install docker -y
