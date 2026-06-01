@@ -55,8 +55,8 @@ Resources:
                  --env DATABASE_URL=postgresql://${DbUser}:${DbPass}@${DbUrl}/booklogr?sslmode=require \
                   mozzo/booklogr:v1.10.0
               - DbUser: !Ref DBUsername
-              - DbPass: !Ref DBPassword
-              - DbUrl: !ImportValue Booklogr-DBEndpoint
+                DbPass: !Ref DBPassword
+                DbUrl: !ImportValue Booklogr-DBEndpoint
         SecurityGroupIds: 
         - !ImportValue Booklogr-ServerSG
         ImageId: !Ref AMIid
