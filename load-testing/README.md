@@ -1,4 +1,10 @@
-# Setup virtual environment and install dependencies
+# Load testing of the Booklogr API
+
+This folder contains the code, instructions, and results of load testing the Booklogr API deployed on AWS.
+
+Before proceeding, make sure the application is deployed using the CloudFormation templates provided in the `../templates` directory.
+
+## Setup virtual environment and install dependencies
 
 - Create a Python virtual environment and activate it:
 ```
@@ -10,9 +16,10 @@ $ source venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-# Seeding the DB
+## Seeding the DB
 
-- The `dump_file.sqp` file contains the SQL dump for quicker seeding of the DB. It was generated using the `seed_api.py` script.
+The `dump_file.sqp` file contains the SQL dump for quicker seeding of the DB. It was generated using the `seed_api.py` script. You do not need to run it again.
+
 - Create EC2 instance in the `booklogr-vpc`, with the `BooklogrAPI` security group, and the `vockey` key pair.
 - Copy the `dump_file.sql` file to the EC2 instance:
 ```
@@ -40,9 +47,8 @@ $ psql "host=$RDSHOST port=5432 dbname=booklogr user=postgres sslmode=verify-ful
 $ psql "host=$RDSHOST port=5432 dbname=booklogr user=postgres sslmode=verify-full sslrootcert=./global-bundle.pem" -f dump_file.sql
 ```
 
-# Running the Load Test
+## Running the Load Test
 
-- Make sure the followed the steps to create Python venv and install dependencies in the main README.
 - Run locust:
 ```
 $ locust
@@ -52,8 +58,8 @@ $ locust
 - Enter host name: `http://<load_balancer_dns_name>`
 - Tweak any other settings and click "Start"
 
-# Results
-You can view the results of the load testing in the `results` directory. It contains the `results/data` subdirectory with the measurements captured during my load testing: CSV files and charts exported from locust for each run of the test.
+## Results
+You can view the results of my load testing in the `results` directory. It contains the `results/data` subdirectory with the measurements captured during my load testing: CSV files and charts exported from locust for each run of the test.
 
 I have also created a python script `results/plot_results.py` that generates charts from the measured data.
 ```
