@@ -7,8 +7,9 @@
 ## Description
 
 This repository contains files needed to deploy the Booklogr application in AWS, using the AWS Academy Lab environment:
-- CloudFormation templates for deploying the application infrastructure on AWS
-- Copy of the SPA code for the Booklogr application, which should be deployed on an S3 bucket created by the CloudFormation templates
+- `./templates` - CloudFormation templates for deploying the application infrastructure on AWS
+- `./booklogr-web` - Copy of the SPA code for the Booklogr application, which should be deployed on anS3 bucket created by the CloudFormation templates
+- `./load-testing` - various scripts for load testing using `locust`, and results of my runs of the tests
 
 The backend is deployed using the official Booklogr Docker image, and therefore this repository does not contain the backend code. The backend code can be found in the [Booklogr repository](https://github.com/Mozzo1000/booklogr).
 
