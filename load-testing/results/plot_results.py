@@ -126,14 +126,22 @@ def plot_requests_per_s(
             means.append(mean_val)
             stds.append(std_val)
         if xs:
-            plt.errorbar(
+            lower = [mean - std for mean, std in zip(means, stds)]
+            upper = [mean + std for mean, std in zip(means, stds)]
+            plt.plot(
                 xs,
                 means,
-                yerr=stds,
                 marker="o",
                 label=config.upper(),
                 color=color,
-                capsize=4,
+            )
+            plt.fill_between(
+                xs,
+                lower,
+                upper,
+                color=color,
+                alpha=0.18,
+                linewidth=0,
             )
     plt.title("Requests per Second")
     plt.xlabel("Concurrent Users")
@@ -162,14 +170,22 @@ def plot_error_rate(data: dict[int, dict[str, list[Metric]]], output_dir: str) -
             means.append(mean_val)
             stds.append(std_val)
         if xs:
-            plt.errorbar(
+            lower = [mean - std for mean, std in zip(means, stds)]
+            upper = [mean + std for mean, std in zip(means, stds)]
+            plt.plot(
                 xs,
                 means,
-                yerr=stds,
                 marker="o",
                 label=config.upper(),
                 color=color,
-                capsize=4,
+            )
+            plt.fill_between(
+                xs,
+                lower,
+                upper,
+                color=color,
+                alpha=0.18,
+                linewidth=0,
             )
     plt.title("Error Rate")
     plt.xlabel("Concurrent Users")
@@ -205,15 +221,23 @@ def plot_latency(data: dict[int, dict[str, list[Metric]]], output_dir: str) -> N
             stds.append(std_val)
         if xs:
             line_style = "--" if "p95" in label.lower() else "-"
-            plt.errorbar(
+            lower = [mean - std for mean, std in zip(means, stds)]
+            upper = [mean + std for mean, std in zip(means, stds)]
+            plt.plot(
                 xs,
                 means,
-                yerr=stds,
                 marker="o",
                 label=label,
                 color=color,
                 linestyle=line_style,
-                capsize=4,
+            )
+            plt.fill_between(
+                xs,
+                lower,
+                upper,
+                color=color,
+                alpha=0.14 if "p95" in label.lower() else 0.18,
+                linewidth=0,
             )
     plt.title("Latency")
     plt.xlabel("Concurrent Users")
