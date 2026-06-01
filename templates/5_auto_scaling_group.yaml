@@ -25,6 +25,17 @@ Parameters:
     MinValue: 2
     MaxValue: 10
 
+  DBUsername:
+    Type: String
+    Default: postgres
+    Description: "The master username for the RDS instance"
+
+  DBPassword:
+    Type: String
+    Default: password
+    NoEcho: true
+    Description: "The master user password for the RDS instance"
+
 Resources:
   BooklogrLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -41,8 +52,10 @@ Resources:
                  --env AUTH_ALLOW_REGISTRATION=True \
                  --env AUTH_REQUIRE_VERIFICATION=False \
                  --env SINGLE_USER_MODE=False \
-                 --env DATABASE_URL=postgresql://postgres:password@${DbUrl}/booklogr?sslmode=require \
+                 --env DATABASE_URL=postgresql://${DbUser}:${DbPass}@${DbUrl}/booklogr?sslmode=require \
                   mozzo/booklogr:v1.10.0
+              - DbUser: !Ref DBUsername
+              - DbPass: !Ref DBPassword
               - DbUrl: !ImportValue Booklogr-DBEndpoint
         SecurityGroupIds: 
         - !ImportValue Booklogr-ServerSG

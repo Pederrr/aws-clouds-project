@@ -11,6 +11,17 @@ Parameters:
       - db.t3.medium
     Description: "The instance type for the RDS instance"
 
+  MasterUsername:
+    Type: String
+    Default: postgres
+    Description: "The master username for the RDS instance"
+
+  MasterUserPassword:
+    Type: String
+    Default: password
+    NoEcho: true
+    Description: "The master user password for the RDS instance"
+
 Resources:
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -27,8 +38,8 @@ Resources:
       AllocatedStorage: 20
       DBInstanceClass: !Ref InstanceType
       Engine: postgres
-      MasterUsername: postgres
-      MasterUserPassword: password
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
       DBName: booklogr
       PreferredBackupWindow: 09:03-09:33
       BackupRetentionPeriod: 7
