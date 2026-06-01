@@ -48,6 +48,7 @@ def read_aggregated_metrics(csv_path: str) -> Optional[Metric]:
                 if median_rt is None:
                     median_rt = parse_float(row.get("50%", ""))
                 p95_rt = parse_float(row.get("95%", ""))
+                avg_size = parse_float(row.get("Average Content Size", ""))
                 if request_count is None or request_count == 0:
                     error_rate = None
                 else:
@@ -59,6 +60,7 @@ def read_aggregated_metrics(csv_path: str) -> Optional[Metric]:
                     requests_per_s is None
                     or median_rt is None
                     or p95_rt is None
+                    or avg_size is None
                     or error_rate is None
                 ):
                     return None
@@ -67,6 +69,7 @@ def read_aggregated_metrics(csv_path: str) -> Optional[Metric]:
                     "error_rate": error_rate,
                     "median_ms": median_rt,
                     "p95_ms": p95_rt,
+                    "avg_size": avg_size,
                 }
     return None
 
@@ -268,12 +271,14 @@ def print_table(data: dict[int, dict[str, list[Metric]]]) -> None:
             err_mean, err_std = mean_std([m["error_rate"] for m in runs])
             med_mean, med_std = mean_std([m["median_ms"] for m in runs])
             p95_mean, p95_std = mean_std([m["p95_ms"] for m in runs])
+            size_mean, size_std = mean_std([m["avg_size"] for m in runs])
             rows.append(
                 [
                     concurrency,
                     config.upper(),
                     format_value(req_mean, req_std),
                     format_value(err_mean, err_std),
+                    format_value(size_mean, size_std, " B"),
                     format_value(med_mean, med_std, " ms"),
                     format_value(p95_mean, p95_std, " ms"),
                     len(runs),
@@ -285,6 +290,7 @@ def print_table(data: dict[int, dict[str, list[Metric]]]) -> None:
         "Config",
         "Requests/s",
         "Error Rate",
+        "Avg Size",
         "Median",
         "P95",
         "Runs",
